@@ -27,6 +27,8 @@ html, body, .stApp, [class*="css"] {{ font-family: {FONT}; color: {C.TEXT}; }}
 .stApp {{ background: {C.PAGE_BG}; }}
 .stApp > header {{ background: transparent !important; }}
 [data-testid="stDecoration"], #MainMenu, footer {{ display: none !important; }}
+[data-testid="stToolbar"], [data-testid="stToolbarActions"], [data-testid="stHeaderActionElements"], .stAppDeployButton, [data-testid="stAppDeployButton"], [data-testid="stStatusWidget"] {{ display: none !important; }}
+[class*="viewerBadge"], a[href*="streamlit.io/cloud"], [data-testid="stAppViewBlockContainer"] + div a[href*="streamlit.io"] {{ display: none !important; }}
 .block-container {{ padding: 2.4rem 1.6rem 2rem 1.6rem; max-width: 1500px; }}
 h1, h2, h3, h4 {{ color: {C.TEXT}; font-weight: 600; letter-spacing: -0.01em; }}
 p, li, label, .stMarkdown {{ color: {C.TEXT}; }}
