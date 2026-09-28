@@ -1,13 +1,15 @@
 # SUPPLIER RISK PREDICTION
 
-**Intelligent Supplier Risk Prediction and Analytics** – a Streamlit dashboard that scores supplier risk with XGBoost, explains every prediction with SHAP, segments suppliers with K-Means, flags anomalies with Isolation Forest, and streams a simulated live supplier feed for real-time monitoring.
+**Intelligent Supplier Risk Prediction and Analytics** – a dark-themed enterprise Streamlit dashboard that scores supplier risk with XGBoost, explains every prediction with SHAP, segments suppliers with K-Means, flags anomalies with Isolation Forest, and streams a simulated live supplier feed for real-time monitoring.
 
 | Mode | What it does |
 |------|--------------|
 | 📁 **Dataset Mode** | Upload a CSV / Excel supplier dataset. Columns are matched automatically to the *financial* profile (the project dataset: revenue, debt, leverage, current ratio, Z-score, cash flow, news sentiment) or the *operational* profile (delivery delay, defect rate, lead time, cost variation, fulfilment …). |
 | 🔴 **Live Data Mode** | No upload needed. A built-in simulator generates internally consistent supplier transactions in real time (clearly labelled **SIMULATED / ARTIFICIAL DATA**), scores them with the same XGBoost pipeline, and produces live alerts. |
 
-Pages: 🏠 Overview · 📊 Supplier Analytics · 🤖 Risk Prediction · 🚨 Anomaly & Alerts · 📈 Live Monitoring
+Pages (horizontal navigation): 🏠 Overview · 📊 Supplier Analytics · 🤖 Risk Prediction · 🚨 Anomaly & Alerts · 📈 Live Monitoring
+
+Design: dark navy enterprise theme (`#0B1220` background, `#111C30` cards, `#3B82F6` primary, green/orange/red risk colours) defined once in `src/config.py` and `.streamlit/config.toml`; custom header with data-mode and system-status chips, data-source switch, KPI cards, Risk Health card, early-warning cards and a unified alert feed.
 
 ---
 
@@ -36,7 +38,7 @@ SUPPLIER RISK PREDICTION/
 ├── Dockerfile                  # container deployment (Render / Railway / HF Spaces)
 ├── run_dashboard.bat           # one-click local launcher (Windows)
 ├── README.md · DEPLOYMENT.md
-├── .streamlit/config.toml      # light enterprise theme, server settings
+├── .streamlit/config.toml      # dark enterprise theme, server settings
 ├── data/
 │   ├── supplier_risk_10000rows_19columns.xlsx        # original project dataset (financial profile)
 │   ├── sample_supplier_data.csv                      # CSV export of the above
@@ -81,7 +83,8 @@ The pipeline mirrors `CAPSTONE_PROJECT.ipynb`:
 4. **Risk category** – `< 0.33 LOW`, `< 0.66 MEDIUM`, else `HIGH` (score shown as 0–100 %).
 5. **SHAP** `TreeExplainer` explains each supplier's most recent records; feature importances are the fallback.
 6. **K-Means** segments suppliers on standardised supplier-level features; cluster labels (Reliable / Delayed / Quality Risk / High Cost / Financially Stressed …) are derived from each cluster centre's strongest deviation, not assigned by hand.
-7. **Isolation Forest** flags anomalous records; the metric with the largest robust z-score becomes the alert type, its magnitude the severity (🟡 Attention ≥ 2σ, 🟠 Warning ≥ 3σ, 🔴 Critical ≥ 4.5σ) and the 5–95 % band the normal range.
+7. **Early warning** compares each supplier's last 3 records with the 3 before them; a rise of 10+ risk points is reported as ⚠️ RISK INCREASING with the metrics that moved most.
+8. **Isolation Forest** flags anomalous records; the metric with the largest robust z-score becomes the alert type, its magnitude the severity (🟡 Attention ≥ 2σ, 🟠 Warning ≥ 3σ, 🔴 Critical ≥ 4.5σ) and the 5–95 % band the normal range.
 
 If an uploaded file does not match a pre-trained model the app says so and either trains an XGBoost model on the fly (when a binary label column exists) or shows a clearly labelled **unsupervised risk index** – it never fabricates model predictions.
 

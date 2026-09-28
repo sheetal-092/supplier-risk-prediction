@@ -54,12 +54,14 @@ def _metric_section(ctx: DataContext, title: str, metrics: List[str], key: str) 
         if not worst.empty:
             fig = ui.bar(worst.sort_values(metric), metric, "Supplier_ID", f"Suppliers with weakest {feature_label(metric).lower()}",
                          color="Risk_Level", color_map=config.RISK_COLORS, orientation="h", height=420, xlabel=f"{feature_label(metric)} ({feature_unit(metric)})", ylabel="Supplier")
-            ui.show(fig, key=f"{key}_worst")
+            with ui.card():
+                ui.show(fig, key=f"{key}_worst")
     with c2:
         trend = metric_over_time(ctx.records, metric)
         if not trend.empty and len(trend) > 1:
             fig = ui.line(trend, "Period", metric, f"{feature_label(metric)} trend", colors=[config.PRIMARY], height=420, ylabel=f"{feature_label(metric)} ({feature_unit(metric)})")
-            ui.show(fig, key=f"{key}_trend")
+            with ui.card():
+                ui.show(fig, key=f"{key}_trend")
         else:
             st.info("Not enough time points for a trend chart.")
     c3, c4 = st.columns(2)
@@ -67,7 +69,8 @@ def _metric_section(ctx: DataContext, title: str, metrics: List[str], key: str) 
         fig = px.box(ctx.records, x="Risk_Level", y=metric, color="Risk_Level", color_discrete_map=config.RISK_COLORS,
                      category_orders={"Risk_Level": config.RISK_ORDER}, points=False)
         fig.update_layout(title=f"{feature_label(metric)} by risk level", xaxis_title="Risk level", yaxis_title=feature_label(metric), showlegend=False)
-        ui.show(ui.style(fig, 360), key=f"{key}_box")
+        with ui.card():
+            ui.show(ui.style(fig, 360), key=f"{key}_box")
     with c4:
         other = [m for m in ctx.profile_cfg("features") if m in ctx.suppliers.columns and m != metric]
         if other:
@@ -75,7 +78,8 @@ def _metric_section(ctx: DataContext, title: str, metrics: List[str], key: str) 
             hover = ["Supplier_Name", "Risk_Score"]
             fig = ui.scatter(ctx.suppliers, metric, y, "Risk_Level", f"{feature_label(metric)} vs {feature_label(y)} (supplier level)",
                              hover=hover, color_map=config.RISK_COLORS, height=330)
-            ui.show(fig, key=f"{key}_scatter")
+            with ui.card():
+                ui.show(fig, key=f"{key}_scatter")
 
 
 def _news_section(ctx: DataContext, key: str) -> None:
@@ -88,14 +92,17 @@ def _news_section(ctx: DataContext, key: str) -> None:
         c1, c2 = st.columns(2)
         with c1:
             fig = ui.bar(g, "Synthetic_News_Sentiment", "Records", "News sentiment distribution", xlabel="Sentiment", ylabel="Records")
-            ui.show(fig, key=f"{key}_dist")
+            with ui.card():
+                ui.show(fig, key=f"{key}_dist")
         with c2:
             fig = ui.bar(g, "Synthetic_News_Sentiment", "Avg_Risk_Score", "Average risk score by sentiment", color="Avg_Risk_Score", text=True, xlabel="Sentiment", ylabel="Avg risk score")
-            ui.show(fig, key=f"{key}_risk")
+            with ui.card():
+                ui.show(fig, key=f"{key}_risk")
     if "News_Risk_Probability" in recs.columns:
         trend = metric_over_time(recs, "News_Risk_Probability")
         if len(trend) > 1:
-            ui.show(ui.line(trend, "Period", "News_Risk_Probability", "News risk over time", colors=[config.CATEGORICAL[2]], ylabel="News risk probability"), key=f"{key}_trend")
+            with ui.card():
+                ui.show(ui.line(trend, "Period", "News_Risk_Probability", "News risk over time", colors=[config.CATEGORICAL[2]], ylabel="News risk probability"), key=f"{key}_trend")
 
 
 def _segmentation(ctx: DataContext) -> None:
@@ -110,14 +117,16 @@ def _segmentation(ctx: DataContext) -> None:
     ui.kpi_row([{"label": row["Cluster_Label"], "value": int(row["Suppliers"]), "color": config.CATEGORICAL[i % len(config.CATEGORICAL)]} for i, row in counts.iterrows()][:6])
     c1, c2 = st.columns([2, 3])
     with c1:
-        fig = ui.bar(counts, "Cluster_Label", "Suppliers", "Cluster distribution", xlabel="Cluster", ylabel="Suppliers")
-        ui.show(fig, key="seg_dist")
+        fig = ui.bar(counts.sort_values("Suppliers"), "Suppliers", "Cluster_Label", "Cluster distribution", orientation="h", xlabel="Suppliers", ylabel="", height=380)
+        with ui.card():
+            ui.show(fig, key="seg_dist")
     with c2:
         feats = [f for f in seg.features if f in sups.columns]
         x = st.selectbox("X axis", feats, index=0, format_func=feature_label, key="seg_x")
         y = st.selectbox("Y axis", feats, index=min(1, len(feats) - 1), format_func=feature_label, key="seg_y")
-        fig = ui.scatter(sups, x, y, "Cluster_Label", "Supplier segmentation (K-Means)", hover=["Supplier_ID", "Supplier_Name", "Risk_Score", "Risk_Level"], size="Risk_Score", height=420)
-        ui.show(fig, key="seg_scatter")
+        fig = ui.scatter(sups, x, y, "Cluster_Label", "Supplier segmentation (K-Means)", hover=["Supplier_ID", "Supplier_Name", "Risk_Score", "Risk_Level"], size="Risk_Score", height=440, legend_bottom=True)
+        with ui.card():
+            ui.show(fig, key="seg_scatter")
     ui.section("Cluster summary", "Mean feature values per cluster (supplier level)")
     summary = seg.summary.copy()
     summary = summary[["Cluster", "Cluster_Label", "Suppliers"] + [c for c in summary.columns if c not in ("Cluster", "Cluster_Label", "Suppliers")]]
@@ -125,12 +134,23 @@ def _segmentation(ctx: DataContext) -> None:
 
 
 def render(ctx: DataContext) -> None:
-    ui.page_title("Supplier Analytics", "Performance, cost and segmentation", "Delivery, quality, operational and cost analytics with interactive comparisons")
+    ui.page_title("📊 SUPPLIER ANALYTICS", "Performance · cost · segmentation", "Delivery, quality, lead-time, fulfilment and cost analytics with K-Means supplier segmentation")
     if ctx.is_live:
         ui.simulated_notice()
     if not ctx.ready:
         empty_state(ctx)
         return
+    f = ctx.filters
+    chips = []
+    if f.get("levels") and set(f["levels"]) != set(config.RISK_ORDER):
+        chips.append("risk level: " + ", ".join(f["levels"]))
+    if f.get("score") and tuple(f["score"]) != (0, 100):
+        chips.append(f"risk score {f['score'][0]}-{f['score'][1]}")
+    if f.get("suppliers"):
+        chips.append(f"{len(f['suppliers'])} supplier(s)")
+    if f.get("clusters"):
+        chips.append("cluster: " + ", ".join(f["clusters"]))
+    st.caption(("Active filters · " + " · ".join(chips)) if chips else "Filters (supplier, risk level, location, cluster, date range) are in the sidebar and apply to every chart and table on this page.")
     sections = config.ANALYTICS_SECTIONS.get(ctx.profile or "", [])
     if not sections:
         numeric = ctx.profile_cfg("features")
@@ -150,4 +170,5 @@ def render(ctx: DataContext) -> None:
         if corr.empty:
             st.info("Not enough numeric features for a correlation matrix.")
         else:
-            ui.show(ui.heatmap(corr, "Feature correlation (including risk score)"), key="corr")
+            with ui.card():
+                ui.show(ui.heatmap(corr, "Feature correlation (including risk score)"), key="corr")

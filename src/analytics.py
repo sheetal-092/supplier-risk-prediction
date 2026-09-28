@@ -293,3 +293,56 @@ def segment_suppliers(supplier_df: pd.DataFrame, features: List[str], k: int = 4
     return SegmentationResult(assignments=assignments, summary=summary, features=feats, k=k, labels=labels,
                               message=f"K-Means (k={k}) on {len(feats)} standardised supplier-level features: " + ", ".join(feature_label(f) for f in feats),
                               pca=pca_df)
+
+
+# --------------------------------------------------------------------------- #
+# Early warning system
+# --------------------------------------------------------------------------- #
+_REASON_WORDS = {1: "increased", -1: "dropped", 0: "changed"}
+
+
+def early_warnings(records: pd.DataFrame, features: List[str], window: int = 3, min_change: float = 10.0) -> pd.DataFrame:
+    """Suppliers whose risk rose by >= ``min_change`` points between two consecutive windows.
+
+    Previous risk = mean of the ``window`` records before the last ``window``
+    records; current risk = mean of the last ``window`` records.  Reasons are
+    the features whose recent mean moved most in the risk direction
+    (relative to the portfolio's standard deviation).
+    """
+    if records.empty or "Risk_Score" not in records.columns:
+        return pd.DataFrame()
+    order_col = "Date" if "Date" in records.columns else ("Record_Index" if "Record_Index" in records.columns else None)
+    d = records.sort_values(order_col) if order_col else records
+    feats = [f for f in features if f in d.columns and pd.api.types.is_numeric_dtype(d[f])]
+    std = d[feats].std().replace(0, np.nan) if feats else pd.Series(dtype=float)
+    rows = []
+    for sid, g in d.groupby("Supplier_ID", sort=False):
+        if len(g) < 2 * window:
+            continue
+        cur, prev = g.tail(window), g.iloc[-2 * window:-window]
+        cur_risk, prev_risk = float(cur["Risk_Score"].mean()), float(prev["Risk_Score"].mean())
+        change = cur_risk - prev_risk
+        if change < min_change:
+            continue
+        reasons: List[Tuple[float, str]] = []
+        for f in feats:
+            delta = float(cur[f].mean() - prev[f].mean())
+            if std.get(f) is None or np.isnan(std[f]):
+                continue
+            direction = config.FEATURE_DIRECTION.get(f, 0)
+            z = delta / std[f]
+            bad = z * direction if direction else abs(z)
+            if bad > 0.25:
+                reasons.append((bad, f"{feature_label(f)} {_REASON_WORDS[int(np.sign(delta))] if delta else 'changed'}"))
+        reasons.sort(reverse=True)
+        rows.append({
+            "Supplier_ID": sid,
+            "Supplier_Name": g["Supplier_Name"].iloc[-1] if "Supplier_Name" in g.columns else sid,
+            "Previous_Risk": round(prev_risk, 1),
+            "Current_Risk": round(cur_risk, 1),
+            "Change": round(change, 1),
+            "Reasons": ", ".join(r for _, r in reasons[:3]) or "Risk score rising",
+            "Last_Seen": g[order_col].iloc[-1] if order_col else None,
+        })
+    out = pd.DataFrame(rows)
+    return out.sort_values("Change", ascending=False).reset_index(drop=True) if not out.empty else out

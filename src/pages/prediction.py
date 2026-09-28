@@ -21,7 +21,7 @@ def _feature_values(ctx: DataContext, sup_rows: pd.DataFrame) -> dict:
 
 
 def render(ctx: DataContext) -> None:
-    ui.page_title("🤖 Supplier Risk Prediction", "XGBoost risk scoring with SHAP explanations")
+    ui.page_title("🤖 RISK PREDICTION", "XGBoost · SHAP", "Select a supplier to see its model risk score, risk factors and the SHAP explanation")
     if ctx.is_live:
         ui.simulated_notice()
     if not ctx.ready:
@@ -64,9 +64,10 @@ def render(ctx: DataContext) -> None:
             unsafe_allow_html=True,
         )
     with c3:
-        ui.show(ui.gauge(float(sup["Risk_Score"]), "Current risk (supplier aggregate)"), key="pred_gauge")
+        with ui.card():
+            ui.show(ui.gauge(float(sup["Risk_Score"]), "Current risk (supplier aggregate)"), key="pred_gauge")
 
-    ui.section("Key features for this supplier", "Latest record values used by the model")
+    ui.section("Risk Factors", "Latest record values of the supplier metrics used by the model")
     ui.feature_cards(_feature_values(ctx, rows))
     if {"Financial_Risk_Probability", "News_Risk_Probability"} <= set(rows.columns):
         f, n = latest["Financial_Risk_Probability"], latest["News_Risk_Probability"]
@@ -81,7 +82,8 @@ def render(ctx: DataContext) -> None:
         med, mad = ctx.records[feats].median(), (ctx.records[feats] - ctx.records[feats].median()).abs().median().replace(0, np.nan)
         dev = ((rows[feats].tail(3).mean() - med) / mad).fillna(0)
         contrib = pd.DataFrame({"Feature": feats, "Contribution": dev.values, "Value": rows[feats].tail(3).mean().values}).sort_values("Contribution", key=abs, ascending=False)
-        ui.show(ui.contribution_chart(contrib, "Deviation from median (robust z-score)", "shap"), key="pred_dev")
+        with ui.card():
+            ui.show(ui.contribution_chart(contrib, "Deviation from median (robust z-score)", "shap"), key="pred_dev")
     else:
         contrib, base, method = explain_rows(bundle, rows.tail(3))
         if contrib is None:
@@ -90,12 +92,13 @@ def render(ctx: DataContext) -> None:
             c1, c2 = st.columns([3, 2])
             with c1:
                 title = "SHAP contributions (mean of last 3 records)" if method == "shap" else "Model feature importance (SHAP unavailable)"
-                ui.show(ui.contribution_chart(contrib, title, method), key="pred_shap")
+                with ui.card():
+                    ui.show(ui.contribution_chart(contrib, title, method), key="pred_shap")
             with c2:
                 if method == "shap":
                     pos = contrib[contrib["Contribution"] > 0].head(3)
                     neg = contrib[contrib["Contribution"] < 0].head(3)
-                    st.markdown('<div class="srp-card"><h4>Interpretation</h4>' +
+                    st.markdown('<div class="srp-card" style="height:100%"><h4>Interpretation</h4>' +
                                 ("<b style='color:#991B1B'>Pushing risk up:</b><ul>" + "".join(f"<li>{feature_label(r.Feature)} = {ui.fmt_num(r.Value, 3)} (+{r.Contribution:.2f})</li>" for r in pos.itertuples()) + "</ul>" if not pos.empty else "") +
                                 ("<b style='color:#166534'>Pulling risk down:</b><ul>" + "".join(f"<li>{feature_label(r.Feature)} = {ui.fmt_num(r.Value, 3)} ({r.Contribution:.2f})</li>" for r in neg.itertuples()) + "</ul>" if not neg.empty else "") +
                                 f"<div style='font-size:12px;color:{config.MUTED}'>Values are SHAP contributions in log-odds relative to the model's base value "
@@ -111,7 +114,8 @@ def render(ctx: DataContext) -> None:
                     st.caption(f"Trained on: {bundle.source}")
 
     ui.section("Risk trend for this supplier")
-    risk_trend_block(ctx, key="pred_trend", default_supplier=sid, show_supplier_picker=False)
+    with ui.card():
+        risk_trend_block(ctx, key="pred_trend", default_supplier=sid, show_supplier_picker=False)
 
     ui.section("Recent records")
     show_cols = ["Date"] if "Date" in rows.columns else []

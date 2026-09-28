@@ -23,7 +23,7 @@ def click(at, key):
 
 def click_label(at, text):
     for b in at.button:
-        if text in b.label:
+        if text.lower() in b.label.lower():
             b.click(); at.run(); return True
     raise AssertionError(f"button '{text}' not found; have {[b.label for b in at.button]}")
 
@@ -34,45 +34,45 @@ ok &= check(at, "initial (no data)")
 print("  title markdowns:", [m.value[:60] for m in at.markdown[:2]])
 
 # ---- Dataset mode with financial sample
-click_label(at, "Financial sample")
+click_label(at, "Financial Sample")
 ok &= check(at, "financial sample loaded / overview")
 print("  KPI metrics markdown count:", len(at.markdown))
 for p in PAGES[1:]:
-    at.radio(key="page").set_value(p).run()
+    at.session_state["page"] = p; at.run()
     ok &= check(at, f"financial -> {p}")
 
 # ---- filters
-at.radio(key="page").set_value(PAGES[0]).run()
+at.session_state["page"] = PAGES[0]; at.run()
 at.multiselect(key="f_levels").set_value(["HIGH", "MEDIUM"]).run(); ok &= check(at, "filter levels HIGH+MEDIUM")
 at.slider(key="f_score").set_value((30, 100)).run(); ok &= check(at, "filter score 30-100")
 clusters = at.multiselect(key="f_cluster").options
 print("  cluster options:", clusters)
 at.multiselect(key="f_cluster").set_value(clusters[:1]).run(); ok &= check(at, "filter cluster")
-at.radio(key="page").set_value(PAGES[2]).run(); ok &= check(at, "prediction with filters")
-at.radio(key="page").set_value(PAGES[3]).run(); ok &= check(at, "anomaly with filters")
+at.session_state["page"] = PAGES[2]; at.run(); ok &= check(at, "prediction with filters")
+at.session_state["page"] = PAGES[3]; at.run(); ok &= check(at, "anomaly with filters")
 click_label(at, "Reset filters"); ok &= check(at, "reset filters")
 
 # ---- operational sample + processed sample
-at.radio(key="page").set_value(PAGES[0]).run()
-click_label(at, "Operational sample"); ok &= check(at, "operational sample / overview")
+at.session_state["page"] = PAGES[0]; at.run()
+click_label(at, "Operational Sample"); ok &= check(at, "operational sample / overview")
 for p in PAGES[1:4]:
-    at.radio(key="page").set_value(p).run(); ok &= check(at, f"operational -> {p}")
-click_label(at, "Processed dataset"); ok &= check(at, "processed sample")
-at.radio(key="page").set_value(PAGES[2]).run(); ok &= check(at, "processed -> prediction")
+    at.session_state["page"] = p; at.run(); ok &= check(at, f"operational -> {p}")
+click_label(at, "Processed Dataset"); ok &= check(at, "processed sample")
+at.session_state["page"] = PAGES[2]; at.run(); ok &= check(at, "processed -> prediction")
 
 # ---- analysis settings
 at.selectbox[0].set_value("Latest record").run(); ok &= check(at, "agg latest")
 
 # ---- Live mode
-at.radio(key="mode").set_value("Live Data").run(); ok &= check(at, "switch to live (no data yet)")
+at.session_state["mode"] = "Live Data"; at.run(); ok &= check(at, "switch to live (no data yet)")
 for p in PAGES:
-    at.radio(key="page").set_value(p).run(); ok &= check(at, f"live empty -> {p}")
+    at.session_state["page"] = p; at.run(); ok &= check(at, f"live empty -> {p}")
 click(at, "sb_start"); ok &= check(at, "start")
 time.sleep(1.6); at.run(); ok &= check(at, "after 1.6s (auto fragment)")
 print("  sim records:", len(at.session_state["sim"].records), "running:", at.session_state["sim"].running)
 time.sleep(1.6); at.run()
 for p in PAGES:
-    at.radio(key="page").set_value(p).run(); ok &= check(at, f"live running -> {p}")
+    at.session_state["page"] = p; at.run(); ok &= check(at, f"live running -> {p}")
     time.sleep(0.6)
 print("  sim records:", len(at.session_state["sim"].records), "alerts:", len(at.session_state["sim"].alerts), "history:", len(at.session_state["sim"].history))
 at.select_slider(key="live_rate").set_value(20).run(); time.sleep(1.2); at.run(); ok &= check(at, "rate 20")
@@ -84,7 +84,7 @@ at.multiselect(key="f_levels").set_value(["HIGH"]).run(); ok &= check(at, "live 
 click_label(at, "Reset filters")
 click(at, "lv_reset"); ok &= check(at, "reset"); print("  after reset records:", len(at.session_state["sim"].records), "total", at.session_state["sim"].total_generated)
 # back to dataset -> data still there?
-at.radio(key="mode").set_value("Dataset").run(); ok &= check(at, "back to dataset mode")
+at.session_state["mode"] = "Dataset"; at.run(); ok &= check(at, "back to dataset mode")
 print("  dataset still loaded:", at.session_state["dataset"]["name"] if at.session_state["dataset"] else None)
 
 # ---- upload paths (CSV + Excel + bad file) via handle_upload logic

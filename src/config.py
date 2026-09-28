@@ -37,26 +37,30 @@ APP_TITLE = "SUPPLIER RISK PREDICTION"
 APP_SUBTITLE = "Intelligent Supplier Risk Prediction and Analytics"
 
 # --------------------------------------------------------------------------- #
-# Colours (light enterprise theme)
+# Colours (dark enterprise theme)
 # --------------------------------------------------------------------------- #
-PRIMARY = "#2563EB"
-PRIMARY_DARK = "#1E40AF"
-PRIMARY_LIGHT = "#DBEAFE"
-TEXT = "#1E293B"
-MUTED = "#64748B"
-BORDER = "#E2E8F0"
-CARD_BG = "#FFFFFF"
-PAGE_BG = "#F4F6FA"
+PRIMARY = "#3B82F6"
+PRIMARY_DARK = "#2563EB"
+PRIMARY_LIGHT = "#60A5FA"
+PRIMARY_SOFT = "rgba(59,130,246,0.16)"
+TEXT = "#F8FAFC"
+MUTED = "#94A3B8"
+BORDER = "#1E3A5F"
+CARD_BG = "#111C30"
+CARD_BG_2 = "#0F172A"
+PAGE_BG = "#0B1220"
+SIDEBAR_BG = "#0F172A"
+GRID = "rgba(30,58,95,0.55)"
 
 RISK_COLORS = {
-    "LOW": "#16A34A",
+    "LOW": "#22C55E",
     "MEDIUM": "#F59E0B",
-    "HIGH": "#DC2626",
+    "HIGH": "#EF4444",
 }
 RISK_SOFT = {
-    "LOW": "#DCFCE7",
-    "MEDIUM": "#FEF3C7",
-    "HIGH": "#FEE2E2",
+    "LOW": "rgba(34,197,94,0.16)",
+    "MEDIUM": "rgba(245,158,11,0.16)",
+    "HIGH": "rgba(239,68,68,0.16)",
 }
 RISK_ORDER = ["LOW", "MEDIUM", "HIGH"]
 
@@ -67,15 +71,15 @@ SEVERITY_ICONS = {
     "Normal": "🟢",
 }
 SEVERITY_COLORS = {
-    "Critical": "#DC2626",
+    "Critical": "#EF4444",
     "Warning": "#F97316",
     "Attention": "#EAB308",
-    "Normal": "#16A34A",
+    "Normal": "#22C55E",
 }
 
 # A sequential blue palette for neutral charts
-BLUES = ["#1E3A8A", "#1D4ED8", "#2563EB", "#3B82F6", "#60A5FA", "#93C5FD", "#BFDBFE"]
-CATEGORICAL = ["#2563EB", "#0EA5E9", "#7C3AED", "#14B8A6", "#F59E0B", "#EC4899", "#64748B", "#84CC16"]
+BLUES = ["#1E40AF", "#2563EB", "#3B82F6", "#60A5FA", "#93C5FD", "#BFDBFE", "#DBEAFE"]
+CATEGORICAL = ["#3B82F6", "#22D3EE", "#A78BFA", "#2DD4BF", "#FBBF24", "#F472B6", "#94A3B8", "#A3E635"]
 
 # --------------------------------------------------------------------------- #
 # Risk thresholds - identical to the notebook (Final_Risk_Score based)
@@ -178,8 +182,9 @@ PROFILES = {
             "Defect_Rate",
             "Lead_Time_Days",
             "Cost_Variation",
-            "Order_Fulfillment_Rate",
             "Quality_Score",
+            "Order_Fulfillment_Rate",
+            "Performance_Score",
         ],
         "cluster_features": [
             "Delivery_Delay_Days",

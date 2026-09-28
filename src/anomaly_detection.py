@@ -267,3 +267,70 @@ def _top_metric_reason(row: pd.Series) -> str:
         if best is None or sev > best[0]:
             best = (sev, template.format(v=v))
     return best[1] if best else "Model risk score elevated"
+
+
+# --------------------------------------------------------------------------- #
+# Unified alert feed for Dataset Mode
+# --------------------------------------------------------------------------- #
+def build_alert_feed(supplier_df: pd.DataFrame, anomaly_alerts: Optional[pd.DataFrame], warnings: Optional[pd.DataFrame],
+                     records: Optional[pd.DataFrame] = None, features: Optional[List[str]] = None, limit: int = 40) -> pd.DataFrame:
+    """Combine HIGH RISK suppliers, RISK INCREASING warnings and Isolation-Forest anomalies into one feed.
+
+    Everything is derived from the current data: no alert is invented.
+    """
+    rows: List[Dict[str, object]] = []
+
+    def ts(value) -> str:
+        try:
+            if value is None or pd.isna(value):
+                return ""
+            return pd.Timestamp(value).strftime("%Y-%m-%d %H:%M")
+        except Exception:  # noqa: BLE001
+            return str(value)
+
+    # reasons for high-risk suppliers: metric with the largest bad deviation vs portfolio
+    reason_by_supplier: Dict[str, str] = {}
+    if records is not None and features:
+        feats = [f for f in features if f in records.columns and pd.api.types.is_numeric_dtype(records[f])]
+        if feats:
+            z, ranges, med, mad = _robust_z(records[feats].fillna(records[feats].median()), feats)
+            order_col = "Date" if "Date" in records.columns else None
+            latest = (records.sort_values(order_col) if order_col else records).groupby("Supplier_ID").tail(1)
+            for idx, row in latest.iterrows():
+                best, best_v = None, 0.0
+                for f in feats:
+                    direction = config.FEATURE_DIRECTION.get(f, 0)
+                    v = z.loc[idx, f] * direction if direction else abs(z.loc[idx, f])
+                    if v > best_v:
+                        best, best_v = f, float(v)
+                if best is not None and best_v >= 1.0:
+                    reason_by_supplier[row["Supplier_ID"]] = f"{ALERT_TYPES.get(best, feature_label(best))} ({_fmt(float(row[best]), feature_unit(best))})"
+
+    if supplier_df is not None and not supplier_df.empty:
+        high = supplier_df[supplier_df["Risk_Level"] == "HIGH"].sort_values("Risk_Score", ascending=False)
+        for _, s in high.iterrows():
+            rows.append({"Time": s.get("Last_Seen"), "Timestamp": ts(s.get("Last_Seen")), "Icon": "🔴", "Supplier_ID": s["Supplier_ID"],
+                         "Supplier_Name": s.get("Supplier_Name", ""), "Alert_Type": "HIGH RISK", "Severity": "Critical", "Risk_Level": "HIGH",
+                         "Risk_Score": s["Risk_Score"], "Reason": reason_by_supplier.get(s["Supplier_ID"], f"Model risk score {s['Risk_Score']:.0f}%"),
+                         "Detected": f"{s['Risk_Score']:.0f}%"})
+    if warnings is not None and not warnings.empty:
+        for _, w in warnings.iterrows():
+            rows.append({"Time": w.get("Last_Seen"), "Timestamp": ts(w.get("Last_Seen")), "Icon": "🟠", "Supplier_ID": w["Supplier_ID"],
+                         "Supplier_Name": w.get("Supplier_Name", ""), "Alert_Type": "RISK INCREASING", "Severity": "Warning",
+                         "Risk_Level": "HIGH" if w["Current_Risk"] >= config.RISK_MEDIUM_MAX * 100 else "MEDIUM" if w["Current_Risk"] >= config.RISK_LOW_MAX * 100 else "LOW",
+                         "Risk_Score": w["Current_Risk"], "Reason": f"{w['Previous_Risk']:.0f}% → {w['Current_Risk']:.0f}%: {w['Reasons']}", "Detected": f"{w['Change']:+.0f}%"})
+    if anomaly_alerts is not None and not anomaly_alerts.empty:
+        recent = anomaly_alerts.sort_values("Date", ascending=False) if "Date" in anomaly_alerts.columns else anomaly_alerts
+        for _, a in recent.head(limit).iterrows():
+            rows.append({"Time": a.get("Date"), "Timestamp": ts(a.get("Date")), "Icon": "🟡", "Supplier_ID": a["Supplier_ID"],
+                         "Supplier_Name": a.get("Supplier_Name", ""), "Alert_Type": "ANOMALY DETECTED", "Severity": a["Severity"],
+                         "Risk_Level": a.get("Risk_Level", ""), "Risk_Score": a.get("Risk_Score", np.nan),
+                         "Reason": f"{a['Alert_Type']}: {a['Detected']} (normal {a['Normal_Range']})", "Detected": a["Detected"]})
+    feed = pd.DataFrame(rows)
+    if feed.empty:
+        return feed
+    sev_rank = {"Critical": 0, "Warning": 1, "Attention": 2}
+    feed["_r"] = feed["Severity"].map(sev_rank).fillna(3)
+    feed["_t"] = pd.to_datetime(feed["Time"], errors="coerce")
+    feed = feed.sort_values(["_r", "_t"], ascending=[True, False]).drop(columns=["_r", "_t"]).reset_index(drop=True)
+    return feed
