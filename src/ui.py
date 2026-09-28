@@ -20,7 +20,9 @@ html, body, [class*="css"], .stApp {{ font-family: {FONT}; color: {config.TEXT};
 .stApp {{ background: {config.PAGE_BG}; }}
 .block-container {{ padding-top: 1.4rem; padding-bottom: 2rem; max-width: 1400px; }}
 h1, h2, h3 {{ color: {config.TEXT}; font-weight: 600; letter-spacing: -0.01em; }}
-section[data-testid="stSidebar"] {{ background: #FFFFFF; border-right: 1px solid {config.BORDER}; }}
+section[data-testid="stSidebar"] {{ background: #FFFFFF; border-right: 1px solid {config.BORDER}; width: 330px !important; min-width: 330px !important; }}
+section[data-testid="stSidebar"] .stButton>button {{ padding: 0.3rem 0.45rem; font-size: 13px; }}
+section[data-testid="stSidebar"] .stButton>button p {{ font-size: 13px; white-space: nowrap; }}
 section[data-testid="stSidebar"] .block-container {{ padding-top: 1rem; }}
 .srp-brand {{ display:flex; align-items:center; gap:10px; padding: 4px 0 10px 0; border-bottom: 1px solid {config.BORDER}; margin-bottom: 8px; }}
 .srp-brand .logo {{ width: 36px; height: 36px; border-radius: 10px; background: {config.PRIMARY}; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size: 15px; }}
@@ -215,7 +217,9 @@ def donut(counts: Dict[str, int], title: str = "Risk Distribution") -> go.Figure
     total = sum(values)
     fig.add_annotation(text=f"<b>{total}</b><br><span style='font-size:11px;color:{config.MUTED}'>suppliers</span>", showarrow=False, font=dict(size=20))
     fig.update_layout(title=title)
-    return style(fig, 340)
+    fig = style(fig, 340)
+    fig.update_layout(legend=dict(orientation="h", yanchor="top", y=-0.02, xanchor="center", x=0.5))
+    return fig
 
 
 def histogram(scores: pd.Series, title: str = "Risk Score Distribution") -> go.Figure:
@@ -229,7 +233,9 @@ def histogram(scores: pd.Series, title: str = "Risk Score Distribution") -> go.F
     fig.update_layout(barmode="stack", title=title, xaxis_title="Risk score (0-100)", yaxis_title="Records", bargap=0.06)
     fig.add_vline(x=config.RISK_LOW_MAX * 100, line_dash="dot", line_color=config.MUTED)
     fig.add_vline(x=config.RISK_MEDIUM_MAX * 100, line_dash="dot", line_color=config.MUTED)
-    return style(fig, 340)
+    fig = style(fig, 340)
+    fig.update_layout(legend=dict(orientation="h", yanchor="top", y=-0.22, xanchor="center", x=0.5))
+    return fig
 
 
 def bar(df: pd.DataFrame, x: str, y: str, title: str, color: Optional[str] = None, orientation: str = "v",
@@ -306,14 +312,16 @@ def gauge(score: float, title: str = "Risk Score") -> go.Figure:
     color = config.RISK_COLORS["LOW" if score < config.RISK_LOW_MAX * 100 else "MEDIUM" if score < config.RISK_MEDIUM_MAX * 100 else "HIGH"]
     fig = go.Figure(go.Indicator(
         mode="gauge+number", value=score, number=dict(suffix="%", font=dict(size=34)),
-        gauge=dict(axis=dict(range=[0, 100], tickwidth=1), bar=dict(color=color, thickness=0.3),
+        gauge=dict(axis=dict(range=[0, 100], tickvals=[0, 33, 66, 100], ticktext=["0", "33", "66", "100"], tickfont=dict(size=11, color=config.MUTED)), bar=dict(color=color, thickness=0.3),
                    bgcolor="white", borderwidth=0,
                    steps=[dict(range=[0, config.RISK_LOW_MAX * 100], color=config.RISK_SOFT["LOW"]),
                           dict(range=[config.RISK_LOW_MAX * 100, config.RISK_MEDIUM_MAX * 100], color=config.RISK_SOFT["MEDIUM"]),
                           dict(range=[config.RISK_MEDIUM_MAX * 100, 100], color=config.RISK_SOFT["HIGH"])]),
         title=dict(text=title, font=dict(size=13, color=config.MUTED)),
     ))
-    return style(fig, 230, legend_top=False, margin_t=30)
+    fig = style(fig, 230, legend_top=False, margin_t=30)
+    fig.update_layout(margin=dict(l=30, r=30, t=30, b=10))
+    return fig
 
 
 # --------------------------------------------------------------------------- #

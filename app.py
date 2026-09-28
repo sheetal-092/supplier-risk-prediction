@@ -96,15 +96,15 @@ with st.sidebar:
             )
 
         _live_status()
-        page_live.controls(sim, "sb")
+        page_live.controls(sim, "sb", compact=True)
         rate = st.select_slider("Data generation rate (records/sec)", options=config.LIVE_RATE_OPTIONS, value=sim.rate if sim.rate in config.LIVE_RATE_OPTIONS else 5, key="live_rate")
         if rate != sim.rate:
             sim.rate = int(rate)
         n_sup = st.number_input("Simulated suppliers (applied on reset)", min_value=10, max_value=200, value=sim.n_suppliers, step=10, key="live_nsup")
         if int(n_sup) != sim.n_suppliers:
             sim.n_suppliers = int(n_sup)
-        st.toggle("Auto-refresh while running", key="auto_refresh")
-        st.select_slider("Refresh interval (seconds)", options=[1, 2, 3, 5, 10], key="refresh_seconds")
+        ss["auto_refresh"] = st.toggle("Auto-refresh while running", value=bool(ss.get("auto_refresh", True)))
+        ss["refresh_seconds"] = st.select_slider("Refresh interval (seconds)", options=[1, 2, 3, 5, 10], value=int(ss.get("refresh_seconds", 2)))
 
     with st.expander("Analysis settings"):
         from src.analytics import AGG_CHOICES

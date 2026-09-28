@@ -25,6 +25,9 @@ PAGES = ["🏠 Overview", "📊 Supplier Analytics", "🤖 Risk Prediction", "�
 
 def init_state() -> None:
     ss = st.session_state
+    # a page button may request a mode switch; apply it before the sidebar radio is created
+    if ss.get("pending_mode"):
+        ss["mode"] = ss.pop("pending_mode")
     ss.setdefault("mode", "Dataset")
     ss.setdefault("page", PAGES[0])
     ss.setdefault("agg", "recent")

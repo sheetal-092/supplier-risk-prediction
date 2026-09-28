@@ -12,8 +12,13 @@ from src.analytics import kpis
 from src.state import DataContext
 
 
-def controls(sim, key: str) -> None:
-    c1, c2, c3 = st.columns(3)
+def controls(sim, key: str, compact: bool = False) -> None:
+    """Start / Pause / Reset buttons. ``compact`` uses two rows (fits the sidebar)."""
+    if compact:
+        c1, c2 = st.columns(2)
+        c3 = st
+    else:
+        c1, c2, c3 = st.columns(3)
     if c1.button("▶ Start", width="stretch", key=f"{key}_start", type="primary", disabled=sim.running):
         sim.start()
         st.rerun()
@@ -31,7 +36,7 @@ def render(ctx: DataContext) -> None:
     if not ctx.is_live:
         st.info("Live Monitoring uses the built-in supplier simulator. Switch the data source to **Live Data** to start streaming.")
         if st.button("🔴 Switch to Live Data Mode", type="primary"):
-            st.session_state["mode"] = "Live Data"
+            st.session_state["pending_mode"] = "Live Data"
             st.rerun()
         return
 
