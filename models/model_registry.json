@@ -1,0 +1,230 @@
+{
+  "created": "2026-09-28T09:24:38",
+  "models": {
+    "xgboost_financial": {
+      "file": "xgboost_financial_model.pkl",
+      "algorithm": "XGBoost (XGBClassifier)",
+      "profile": "financial",
+      "features": [
+        "Revenue_Million_USD",
+        "Debt_Million_USD",
+        "Assets_Million_USD",
+        "Current_Assets_Million_USD",
+        "Current_Liabilities_Million_USD",
+        "Leverage",
+        "Current_Ratio",
+        "Financial_Stability_ZScore",
+        "Profit_Margin",
+        "Cash_Flow_Million_USD",
+        "Financial_Stress_Index"
+      ],
+      "target": "Disruption_Within_90_Days",
+      "medians": {
+        "Revenue_Million_USD": 1291.0749999999998,
+        "Debt_Million_USD": 750.25,
+        "Assets_Million_USD": 2937.76,
+        "Current_Assets_Million_USD": 879.875,
+        "Current_Liabilities_Million_USD": 674.705,
+        "Leverage": 0.2689,
+        "Current_Ratio": 1.2487499999999998,
+        "Financial_Stability_ZScore": 0.272,
+        "Profit_Margin": 0.0938,
+        "Cash_Flow_Million_USD": 102.695,
+        "Financial_Stress_Index": 1.1001967080856678
+      },
+      "feature_ranges": {
+        "Revenue_Million_USD": [
+          93.519,
+          2587.7221
+        ],
+        "Debt_Million_USD": [
+          46.6558,
+          2240.4957
+        ],
+        "Assets_Million_USD": [
+          192.6681,
+          7588.809099999998
+        ],
+        "Current_Assets_Million_USD": [
+          63.2676,
+          2613.3552999999984
+        ],
+        "Current_Liabilities_Million_USD": [
+          45.9279,
+          2236.3305999999993
+        ],
+        "Leverage": [
+          0.081779,
+          0.7172419999999998
+        ],
+        "Current_Ratio": [
+          0.397279,
+          4.396410999999992
+        ],
+        "Financial_Stability_ZScore": [
+          -0.372563,
+          1.0403839999999998
+        ],
+        "Profit_Margin": [
+          -0.046842,
+          0.23052099999999992
+        ],
+        "Cash_Flow_Million_USD": [
+          -78.06,
+          507.95279999999855
+        ],
+        "Financial_Stress_Index": [
+          0.42427246897171234,
+          2.853960626165553
+        ]
+      },
+      "metrics": {
+        "accuracy": 0.9018,
+        "precision": 0.2787,
+        "recall": 0.4435,
+        "f1": 0.3423,
+        "roc_auc": 0.838
+      },
+      "training_rows": 7984,
+      "positive_rate": 0.0332,
+      "source": "CAPSTONE_PROJECT.ipynb pipeline on supplier_risk_10000rows_19columns.xlsx"
+    },
+    "random_forest_financial": {
+      "file": "random_forest_financial_model.pkl",
+      "algorithm": "Random Forest",
+      "profile": "financial",
+      "features": [
+        "Revenue_Million_USD",
+        "Debt_Million_USD",
+        "Assets_Million_USD",
+        "Current_Assets_Million_USD",
+        "Current_Liabilities_Million_USD",
+        "Leverage",
+        "Current_Ratio",
+        "Financial_Stability_ZScore",
+        "Profit_Margin",
+        "Cash_Flow_Million_USD",
+        "Financial_Stress_Index"
+      ],
+      "target": "Disruption_Within_90_Days",
+      "metrics": {
+        "accuracy": 0.8231,
+        "precision": 0.1694,
+        "recall": 0.5304,
+        "f1": 0.2568,
+        "roc_auc": 0.8087
+      }
+    },
+    "xgboost_operational": {
+      "file": "xgboost_operational_model.pkl",
+      "algorithm": "XGBoost (XGBClassifier)",
+      "profile": "operational",
+      "features": [
+        "Delivery_Delay_Days",
+        "Defect_Rate",
+        "Lead_Time_Days",
+        "Order_Quantity",
+        "Order_Value",
+        "Quality_Score",
+        "Cost_Variation",
+        "Order_Fulfillment_Rate",
+        "Performance_Score"
+      ],
+      "target": "Risk_Event",
+      "medians": {
+        "Delivery_Delay_Days": 2.78,
+        "Defect_Rate": 2.42,
+        "Lead_Time_Days": 18.9,
+        "Order_Quantity": 769.0,
+        "Order_Value": 121643.945,
+        "Quality_Score": 80.5,
+        "Cost_Variation": 4.04,
+        "Order_Fulfillment_Rate": 94.1,
+        "Performance_Score": 88.2
+      },
+      "feature_ranges": {
+        "Delivery_Delay_Days": [
+          0.0,
+          15.58020000000004
+        ],
+        "Defect_Rate": [
+          0.02,
+          8.64
+        ],
+        "Lead_Time_Days": [
+          6.0,
+          39.9
+        ],
+        "Order_Quantity": [
+          87.0,
+          2010.010000000002
+        ],
+        "Order_Value": [
+          8597.4262,
+          623746.5830000007
+        ],
+        "Quality_Score": [
+          27.2,
+          99.0
+        ],
+        "Cost_Variation": [
+          -1.3401,
+          25.230200000000043
+        ],
+        "Order_Fulfillment_Rate": [
+          66.0,
+          100.0
+        ],
+        "Performance_Score": [
+          51.7,
+          96.8
+        ]
+      },
+      "metrics": {
+        "accuracy": 0.9021,
+        "precision": 0.668,
+        "recall": 0.8259,
+        "f1": 0.7386,
+        "roc_auc": 0.9311
+      },
+      "training_rows": 28800,
+      "positive_rate": 0.1593,
+      "source": "src/live_data.py simulator (SIMULATED / ARTIFICIAL DATA)"
+    },
+    "random_forest_operational": {
+      "file": "random_forest_operational_model.pkl",
+      "algorithm": "Random Forest",
+      "profile": "operational",
+      "features": [
+        "Delivery_Delay_Days",
+        "Defect_Rate",
+        "Lead_Time_Days",
+        "Order_Quantity",
+        "Order_Value",
+        "Quality_Score",
+        "Cost_Variation",
+        "Order_Fulfillment_Rate",
+        "Performance_Score"
+      ],
+      "target": "Risk_Event",
+      "metrics": {
+        "accuracy": 0.9057,
+        "precision": 0.6796,
+        "recall": 0.8267,
+        "f1": 0.746,
+        "roc_auc": 0.935
+      }
+    }
+  },
+  "thresholds": {
+    "low_max": 0.33,
+    "medium_max": 0.66,
+    "financial_weight": 0.6,
+    "news_weight": 0.4
+  },
+  "sentiment_proxy": {
+    "Negative": 0.958,
+    "Neutral": 0.0321,
+    "Positive": 0.0205
+  }
+}
